@@ -1,0 +1,64 @@
+name: TestFlight (Iron Cadence)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - claude/military-calisthenics-app-c2qh4a
+    paths:
+      - "IronCadence/**"
+      - ".github/workflows/testflight.yml"
+
+permissions:
+  contents: write   # fastlane match stores the encrypted signing files on a branch
+
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+jobs:
+  testflight:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: IronCadence
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APP_BUNDLE_ID: ${{ secrets.APP_BUNDLE_ID }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      MATCH_GIT_URL: https://github.com/${{ github.repository }}.git
+      BUILD_NUMBER: ${{ github.run_number }}
+      FASTLANE_SKIP_UPDATE_CHECK: "1"
+      FASTLANE_HIDE_CHANGELOG: "1"
+    steps:
+      - name: Check secrets are configured
+        id: secrets
+        run: |
+          missing=""
+          for v in ASC_KEY_ID ASC_ISSUER_ID APPLE_TEAM_ID APP_BUNDLE_ID MATCH_PASSWORD; do
+            [ -z "${!v}" ] && missing="$missing $v"
+          done
+          [ -z "$ASC_KEY_P8$ASC_KEY_P8_BASE64" ] && missing="$missing ASC_KEY_P8"
+          if [ -n "$missing" ]; then
+            echo "::warning::TestFlight upload skipped. Missing repository secrets:$missing (see IronCadence/TESTFLIGHT.md)"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.ready == 'true'
+      - name: Install tools
+        if: steps.secrets.outputs.ready == 'true'
+        run: brew install xcodegen fastlane
+      - name: Generate Xcode project
+        if: steps.secrets.outputs.ready == 'true'
+        run: xcodegen generate
+      - name: Build, sign and upload to TestFlight
+        if: steps.secrets.outputs.ready == 'true'
+        run: fastlane beta

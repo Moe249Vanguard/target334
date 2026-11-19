@@ -20,6 +20,10 @@ reminders and a full nutrition plan.
 
 ## Install on your iPhone
 
+**No Mac?** Follow [TESTFLIGHT.md](TESTFLIGHT.md): GitHub Actions builds, signs and uploads to TestFlight, and you install from the TestFlight app.
+
+### With a Mac
+
 You need a Mac with **Xcode 16+** and a free Apple ID. A paid developer account
 is only required for TestFlight / App Store distribution.
 
@@ -56,6 +60,7 @@ Connect IQ SDK.
 
 ```
 IronCadence/
+├── fastlane/Fastfile        CI lane: signing (match) → build → TestFlight upload
 ├── project.yml              XcodeGen spec (HealthKit entitlement, Info.plist privacy strings)
 ├── App/
 │   ├── Models/              Profile, goals, workouts, logs, settings

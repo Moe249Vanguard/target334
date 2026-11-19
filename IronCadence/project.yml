@@ -19,6 +19,9 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Iron Cadence
+        CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
+        ITSAppUsesNonExemptEncryption: false
+        LSRequiresIPhoneOS: true
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
