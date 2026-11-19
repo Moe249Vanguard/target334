@@ -1,0 +1,45 @@
+name: iOS build & test (Iron Cadence)
+
+on:
+  push:
+    paths:
+      - "IronCadence/**"
+      - ".github/workflows/ios.yml"
+  pull_request:
+    paths:
+      - "IronCadence/**"
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: IronCadence
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        run: xcodegen generate
+      - name: Pick an iPhone simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)['devices']
+          for rt in sorted(d, reverse=True):
+              if 'iOS' not in rt: continue
+              for dev in d[rt]:
+                  if dev['name'].startswith('iPhone'):
+                      print(dev['udid']); sys.exit()
+          ")
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+      - name: Build and run unit tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project IronCadence.xcodeproj \
+            -scheme IronCadence \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            CODE_SIGNING_ALLOWED=NO | tail -n 200
