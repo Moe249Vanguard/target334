@@ -98,6 +98,7 @@ struct SettingsView: View {
                     Text("Iron Cadence is a training aid, not medical advice. Stop if you feel pain, dizziness or chest discomfort.")
                 }
             }
+            .calmBackground()
             .navigationTitle("Profile")
             .onAppear {
                 settings = store.settings
@@ -129,7 +130,7 @@ struct SettingsView: View {
                     Text(String(weekdaySymbols[day - 1].prefix(2)))
                         .font(.caption.bold())
                         .frame(maxWidth: .infinity, minHeight: 32)
-                        .background(on ? Theme.olive : Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 8))
+                        .background(on ? Theme.primary : Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 8))
                         .foregroundStyle(on ? Color.white : Color.primary)
                 }
                 .buttonStyle(.plain)

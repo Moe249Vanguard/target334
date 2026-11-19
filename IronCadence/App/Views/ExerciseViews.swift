@@ -35,7 +35,8 @@ struct ExerciseLibraryView: View {
                 }
             }
             .searchable(text: $query, prompt: "Search drills or muscles")
-            .navigationTitle("Drill Manual")
+            .calmBackground()
+            .navigationTitle("Drills")
         }
     }
 }
@@ -64,7 +65,7 @@ struct DifficultyView: View {
             ForEach(1...5, id: \.self) { i in
                 Image(systemName: i <= level ? "circle.fill" : "circle")
                     .font(.caption2.bold())
-                    .foregroundStyle(i <= level ? Theme.olive : Color.secondary.opacity(0.3))
+                    .foregroundStyle(i <= level ? Theme.primary : Color.secondary.opacity(0.3))
             }
         }
         .accessibilityLabel("Difficulty \(level) of 5")
@@ -94,7 +95,7 @@ struct ExerciseDetailView: View {
                 if exercise.highImpact {
                     Label("High impact: jumping or landing", systemImage: "exclamationmark.triangle")
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Theme.warn)
                 }
             }
 
@@ -110,7 +111,7 @@ struct ExerciseDetailView: View {
                         Text("\(i + 1)")
                             .font(.headline)
                             .frame(width: 26, height: 26)
-                            .background(Theme.olive.opacity(0.15), in: Circle())
+                            .background(Theme.primary.opacity(0.15), in: Circle())
                         Text(step)
                     }
                 }
@@ -119,7 +120,7 @@ struct ExerciseDetailView: View {
             Section("Coaching cues") {
                 ForEach(exercise.cues, id: \.self) { cue in
                     Label(cue, systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.primary, Theme.olive)
+                        .foregroundStyle(.primary, Theme.primary)
                 }
             }
 
@@ -145,6 +146,7 @@ struct ExerciseDetailView: View {
                 }
             }
         }
+        .calmBackground()
         .navigationTitle(exercise.name)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showVideo) {

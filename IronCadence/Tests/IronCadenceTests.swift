@@ -147,3 +147,79 @@ final class NutritionCalculatorTests: XCTestCase {
         XCTAssertGreaterThan(NutritionCalculator.plan(for: heavy).waterMl, NutritionCalculator.plan(for: light).waterMl)
     }
 }
+
+final class SmartCoachTests: XCTestCase {
+    private let cal = Calendar(identifier: .gregorian)
+    private var program: TrainingProgram { ProgramGenerator.generate(for: UserProfile()) }
+
+    private func date(_ day: Int, hour: Int = 9) -> Date {
+        cal.date(from: DateComponents(year: 2026, month: 11, day: day, hour: hour))!   // 2026-11-16 is a Monday
+    }
+
+    private func log(daysAgo: Int, from now: Date, rpe: Int) -> WorkoutLog {
+        let start = cal.date(byAdding: .day, value: -daysAgo, to: now)!
+        return WorkoutLog(dayID: nil, title: "Test", start: start, end: start.addingTimeInterval(1800),
+                          setsCompleted: 10, totalReps: 100, rpe: rpe, estimatedKcal: 200)
+    }
+
+    private func advise(now: Date, logs: [WorkoutLog] = [], weekdays: [Int] = [2, 3, 5, 6], sleep: Double? = nil, next: WorkoutDay?? = .none) -> CoachAdvice {
+        SmartCoach.advice(now: now, name: "", logs: logs, next: next ?? program.days.first,
+                          trainingWeekdays: weekdays, sleepHours: sleep, calendar: cal)
+    }
+
+    func testTrainingDayIsGo() {
+        let a = advise(now: date(16))
+        XCTAssertEqual(a.tone, .go)
+        XCTAssertEqual(a.greeting, "Good morning")
+        XCTAssertNil(a.suggestedMinutes)
+    }
+
+    func testAlreadyTrainedToday() {
+        let now = date(16, hour: 18)
+        XCTAssertEqual(advise(now: now, logs: [log(daysAgo: 0, from: now, rpe: 7)]).tone, .win)
+    }
+
+    func testShortSleepSuggestsQuickSession() {
+        let a = advise(now: date(16), sleep: 5.2)
+        XCTAssertEqual(a.tone, .rest)
+        XCTAssertEqual(a.suggestedMinutes, 20)
+    }
+
+    func testHardSessionsSuggestEasing() {
+        let now = date(18)
+        let a = advise(now: now, logs: [log(daysAgo: 1, from: now, rpe: 9), log(daysAgo: 2, from: now, rpe: 10)])
+        XCTAssertEqual(a.title, "Ease off a little today")
+    }
+
+    func testEasySessionsSuggestRetest() {
+        let now = date(19)
+        let logs = [1, 2, 3].map { log(daysAgo: $0, from: now, rpe: 4) }
+        XCTAssertEqual(advise(now: now, logs: logs).title, "This is getting easier")
+    }
+
+    func testReturningAfterBreak() {
+        let now = date(20)
+        let a = advise(now: now, logs: [log(daysAgo: 6, from: now, rpe: 7)])
+        XCTAssertEqual(a.title, "Welcome back")
+        XCTAssertEqual(a.suggestedMinutes, 20)
+    }
+
+    func testRestDay() {
+        XCTAssertEqual(advise(now: date(22)).title, "Planned rest day")   // Sunday
+    }
+
+    func testProgramComplete() {
+        XCTAssertEqual(SmartCoach.advice(now: date(16), name: "Moe", logs: [], next: nil,
+                                         trainingWeekdays: [2], sleepHours: nil, calendar: cal).title, "Program complete")
+    }
+
+    func testQuickVersionFitsAndKeepsID() {
+        let day = program.days[0]
+        for minutes in ProgramGenerator.quickOptions(for: day) {
+            let quick = ProgramGenerator.quickVersion(of: day, minutes: minutes)
+            XCTAssertEqual(quick.id, day.id)
+            XCTAssertLessThanOrEqual(quick.estimatedMinutes, minutes + 3)
+            XCTAssertTrue(quick.blocks.contains { $0.kind == .main && !$0.items.isEmpty })
+        }
+    }
+}

@@ -11,6 +11,7 @@ struct WorkoutPlayerView: View {
     @State private var index = 0
     @State private var phaseEnd: Date?
     @State private var remaining = 0
+    @State private var phaseTotal = 1
     @State private var paused = false
     @State private var startDate = Date()
     @State private var setsCompleted = 0
@@ -36,13 +37,16 @@ struct WorkoutPlayerView: View {
                     ProgressView()
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background((isResting ? Theme.skySoft : Theme.bg).ignoresSafeArea())
+            .animation(.easeInOut(duration: 0.4), value: isResting)
             .toolbar {
                 if !finished {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("End") { confirmQuit = true }
                     }
                     ToolbarItem(placement: .principal) {
-                        Text("\(min(index + 1, steps.count)) / \(steps.count)")
+                        Text("Step \(min(index + 1, steps.count)) of \(steps.count)")
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(.secondary)
                     }
@@ -66,6 +70,14 @@ struct WorkoutPlayerView: View {
 
     // MARK: Step UI
 
+    private var isResting: Bool {
+        !finished && steps.indices.contains(index) && steps[index].isRest
+    }
+
+    private var ringProgress: Double {
+        phaseTotal > 0 ? Double(remaining) / Double(phaseTotal) : 1
+    }
+
     @ViewBuilder
     private func stepView(_ step: PlayerStep) -> some View {
         switch step.kind {
@@ -78,64 +90,50 @@ struct WorkoutPlayerView: View {
 
     private func workView(item: PrescribedExercise, set: Int, of: Int, block: String) -> some View {
         let ex = item.exercise
-        return VStack(spacing: 20) {
-            Text(block.uppercased())
-                .font(.caption.bold())
-                .foregroundStyle(Theme.olive)
-            Image(systemName: ex.category.icon)
-                .font(.system(size: 56))
+        return VStack(spacing: 16) {
+            Text(block)
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.categoryColor(ex.category))
             Text(ex.name)
-                .font(.largeTitle.bold())
+                .font(.system(.largeTitle, design: .rounded).weight(.bold))
                 .multilineTextAlignment(.center)
             Text("Set \(set) of \(of)")
                 .font(.headline)
                 .foregroundStyle(.secondary)
 
-            if item.isTimed {
-                Text(remaining.mmss)
-                    .font(.system(size: 80, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                if item.perSide { Text("each side").foregroundStyle(.secondary) }
-            } else {
-                Text("\(item.reps ?? 0)")
-                    .font(.system(size: 96, weight: .bold, design: .rounded))
-                Text(item.perSide ? "reps each side" : "reps").foregroundStyle(.secondary)
+            ProgressRing(progress: item.isTimed ? ringProgress : 1) {
+                VStack(spacing: 2) {
+                    Text(item.isTimed ? remaining.mmss : "\(item.reps ?? 0)")
+                        .font(.system(size: 64, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
+                    Text(item.isTimed ? (item.perSide ? "switch sides halfway" : "hold steady")
+                                      : (item.perSide ? "reps each side" : "reps"))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             if let cue = ex.cues.first {
-                Label(cue, systemImage: "quote.bubble")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                Text("**Tip:** \(cue)")
+                    .font(.subheadline)
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Theme.primarySoft, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
 
             Spacer()
 
             HStack(spacing: 12) {
-                Button {
-                    showForm = true
-                } label: {
-                    Label("Form", systemImage: "play.rectangle")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
-
+                Button("How to do it") { showForm = true }
+                    .buttonStyle(SoftButtonStyle())
                 if item.isTimed {
-                    Button {
-                        togglePause()
-                    } label: {
-                        Label(paused ? "Resume" : "Pause", systemImage: paused ? "play.fill" : "pause.fill")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
+                    Button(paused ? "Resume" : "Pause") { togglePause() }
+                        .buttonStyle(SoftButtonStyle())
                 }
             }
 
-            Button(item.isTimed ? "Skip ahead" : "Set complete") {
+            Button(item.isTimed ? "Skip ahead" : "Done, next") {
                 completeWork()
             }
             .buttonStyle(PrimaryButtonStyle())
@@ -144,31 +142,39 @@ struct WorkoutPlayerView: View {
     }
 
     private func restView(upNext: String) -> some View {
-        VStack(spacing: 20) {
-            Text("REST").font(.caption.bold()).foregroundStyle(.secondary)
-            Text(remaining.mmss)
-                .font(.system(size: 96, weight: .bold, design: .rounded))
-                .monospacedDigit()
-                .contentTransition(.numericText())
-                .foregroundStyle(Theme.olive)
+        let breathingIn = ((phaseTotal - remaining) / 4) % 2 == 0
+        return VStack(spacing: 18) {
+            Text("Rest and recover")
+                .font(.headline)
+                .foregroundStyle(Theme.sky)
+            ProgressRing(progress: ringProgress, color: Theme.sky, track: Theme.surface, breathing: true) {
+                VStack(spacing: 2) {
+                    Text(remaining.mmss)
+                        .font(.system(size: 64, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
+                    Text(breathingIn ? "Breathe in" : "Breathe out")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.sky)
+                }
+            }
             if !upNext.isEmpty {
-                VStack(spacing: 4) {
+                VStack(spacing: 2) {
                     Text("Up next").font(.caption).foregroundStyle(.secondary)
                     Text(upNext).font(.headline)
                 }
+                .padding(14)
+                .frame(maxWidth: .infinity)
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
-            Text("Breathe in through the nose, out through the mouth. Shake it out.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
             Spacer()
             HStack(spacing: 12) {
-                Button("+15 s") { addRest(15) }
-                    .buttonStyle(.bordered).controlSize(.large)
+                Button("+15 sec") { addRest(15) }
+                    .buttonStyle(SoftButtonStyle(tint: Theme.sky, fill: Theme.surface))
                 Button(paused ? "Resume" : "Pause") { togglePause() }
-                    .buttonStyle(.bordered).controlSize(.large)
+                    .buttonStyle(SoftButtonStyle(tint: Theme.sky, fill: Theme.surface))
             }
-            Button("Skip rest") { advance() }
+            Button("I'm ready") { advance() }
                 .buttonStyle(PrimaryButtonStyle())
         }
         .padding()
@@ -196,13 +202,15 @@ struct WorkoutPlayerView: View {
             if let secs = item.seconds, item.isTimed {
                 let total = item.perSide ? secs * 2 : secs
                 remaining = total
+                phaseTotal = total
                 phaseEnd = Date().addingTimeInterval(TimeInterval(total))
             } else {
                 phaseEnd = nil
             }
         case .rest(let seconds, _):
-            Coach.shared.say("Rest.")
+            Coach.shared.say("Rest. Breathe.")
             remaining = seconds
+            phaseTotal = seconds
             phaseEnd = Date().addingTimeInterval(TimeInterval(seconds))
         }
     }
@@ -255,13 +263,14 @@ struct WorkoutPlayerView: View {
 
     private func addRest(_ seconds: Int) {
         remaining += seconds
+        phaseTotal += seconds
         if !paused { phaseEnd = Date().addingTimeInterval(TimeInterval(remaining)) }
     }
 
     private func finish() {
         phaseEnd = nil
         finished = true
-        Coach.shared.say("Workout complete. Outstanding.")
+        Coach.shared.say("Workout complete. Well done.")
         UIApplication.shared.isIdleTimerDisabled = false
     }
 }
@@ -288,7 +297,7 @@ struct WorkoutSummaryView: View {
         Form {
             Section {
                 VStack(spacing: 8) {
-                    Image(systemName: "medal.fill").font(.system(size: 54)).foregroundStyle(Theme.ranger)
+                    Image(systemName: "medal.fill").font(.system(size: 54)).foregroundStyle(Theme.apricot)
                     Text("Mission complete").font(.title.bold())
                     Text(day.title).foregroundStyle(.secondary)
                 }

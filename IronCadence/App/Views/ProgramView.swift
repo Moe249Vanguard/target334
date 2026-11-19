@@ -39,7 +39,8 @@ struct ProgramView: View {
                     }
                 }
             }
-            .navigationTitle("Program")
+            .calmBackground()
+            .navigationTitle("Your plan")
             .onAppear { selectedWeek = store.currentWeek }
         }
     }
@@ -52,7 +53,7 @@ struct DayRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: completed ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(completed ? Theme.olive : .secondary)
+                .foregroundStyle(completed ? Theme.primary : .secondary)
                 .font(.title3)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Day \(day.dayNumber): \(day.title)").font(.headline)
@@ -95,6 +96,7 @@ struct WorkoutDetailView: View {
                 }
             }
         }
+        .calmBackground()
         .navigationTitle(day.title)
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $playing) {
@@ -121,7 +123,7 @@ struct PrescriptionRow: View {
                     Text("Rest \(item.restSeconds)s").font(.caption).foregroundStyle(.secondary)
                 }
                 if let note = item.note {
-                    Text(note).font(.caption).foregroundStyle(Theme.olive)
+                    Text(note).font(.caption).foregroundStyle(Theme.primary)
                 }
             }
         }
@@ -188,6 +190,7 @@ struct HistoryView: View {
                 }
             }
         }
+        .calmBackground()
         .navigationTitle("History")
         .task { await health.refresh() }
     }

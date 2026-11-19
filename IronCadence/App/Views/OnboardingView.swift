@@ -59,7 +59,7 @@ struct OnboardingView: View {
             VStack(alignment: .leading, spacing: 18) {
                 Image(systemName: "shield.lefthalf.filled")
                     .font(.system(size: 64))
-                    .foregroundStyle(Theme.olive)
+                    .foregroundStyle(Theme.primary)
                     .frame(maxWidth: .infinity)
                     .padding(.top, 30)
                 Text("Iron Cadence")
@@ -117,14 +117,14 @@ struct OnboardingView: View {
                         HStack(spacing: 12) {
                             Image(systemName: goal.icon)
                                 .frame(width: 28)
-                                .foregroundStyle(Theme.olive)
+                                .foregroundStyle(Theme.primary)
                             VStack(alignment: .leading) {
                                 Text(goal.label).foregroundStyle(.primary)
                                 Text(goal.summary).font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()
                             if profile.goal == goal {
-                                Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.olive)
+                                Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.primary)
                             }
                         }
                     }

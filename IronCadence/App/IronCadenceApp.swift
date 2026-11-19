@@ -11,7 +11,7 @@ struct IronCadenceApp: App {
             RootView()
                 .environmentObject(store)
                 .environmentObject(health)
-                .tint(Theme.olive)
+                .tint(Theme.primary)
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
                         Task { await health.refresh() }
@@ -37,13 +37,13 @@ struct MainTabView: View {
     var body: some View {
         TabView {
             TodayView()
-                .tabItem { Label("Today", systemImage: "scope") }
+                .tabItem { Label("Today", systemImage: "house") }
             ProgramView()
-                .tabItem { Label("Program", systemImage: "calendar") }
+                .tabItem { Label("Plan", systemImage: "calendar") }
             ExerciseLibraryView()
                 .tabItem { Label("Drills", systemImage: "figure.strengthtraining.functional") }
             NutritionView()
-                .tabItem { Label("Fuel", systemImage: "fork.knife") }
+                .tabItem { Label("Fuel", systemImage: "leaf") }
             SettingsView()
                 .tabItem { Label("Profile", systemImage: "person.crop.circle") }
         }

@@ -12,6 +12,7 @@ struct NutritionView: View {
                     ContentUnavailableView("No profile", systemImage: "fork.knife")
                 }
             }
+            .calmBackground()
             .navigationTitle("Fuel")
         }
     }
@@ -41,7 +42,7 @@ struct NutritionView: View {
             if !plan.warnings.isEmpty {
                 Section {
                     ForEach(plan.warnings, id: \.self) {
-                        Label($0, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                        Label($0, systemImage: "exclamationmark.triangle.fill").foregroundStyle(Theme.warn)
                     }
                 }
             }
@@ -81,7 +82,7 @@ struct NutritionView: View {
                                 .font(.caption.monospacedDigit())
                                 .foregroundStyle(.secondary)
                         }
-                        Text(meal.time).font(.caption).foregroundStyle(Theme.olive)
+                        Text(meal.time).font(.caption).foregroundStyle(Theme.primary)
                         ForEach(meal.examples, id: \.self) { ex in
                             Text("• \(ex)").font(.callout)
                         }
