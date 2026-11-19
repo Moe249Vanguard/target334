@@ -37,6 +37,8 @@ jobs:
       FASTLANE_SKIP_UPDATE_CHECK: "1"
       FASTLANE_HIDE_CHANGELOG: "1"
     steps:
+      # Check out first: every run step uses IronCadence/ as its working directory.
+      - uses: actions/checkout@v4
       - name: Check secrets are configured
         id: secrets
         run: |
@@ -51,8 +53,6 @@ jobs:
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/checkout@v4
-        if: steps.secrets.outputs.ready == 'true'
       - name: Install tools
         if: steps.secrets.outputs.ready == 'true'
         run: brew install xcodegen fastlane
